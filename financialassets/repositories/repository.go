@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import "github.com/ferkze/backend-test/financialassets/domain/model"
 
@@ -6,7 +6,8 @@ import "github.com/ferkze/backend-test/financialassets/domain/model"
 type FinancialAssetRepository interface {
 	
 	FindAll() ([]*model.FinancialAsset, error)
+	Add(*model.FinancialAsset) error
 
-	FindByTicker(ticker string) (*model.FinancialAsset, error)
+	// FindByTicker(ticker string) (*model.FinancialAsset, error)
 	
 }
