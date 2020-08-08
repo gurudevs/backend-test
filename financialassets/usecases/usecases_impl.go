@@ -1,7 +1,7 @@
 package usecases
 
 import (
-	"github.com/ferkze/backend-test/financialassets/domain/model"
+	"github.com/ferkze/backend-test/financialassets/model"
 	"github.com/ferkze/backend-test/financialassets/repositories"
 )
 
