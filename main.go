@@ -8,6 +8,7 @@ import (
 
 	"github.com/ferkze/backend-test/financialassets/controllers"
 	"github.com/ferkze/backend-test/financialassets/repositories/memory"
+	"github.com/ferkze/backend-test/financialassets/services/webscraping"
 	"github.com/ferkze/backend-test/financialassets/usecases"
 	"github.com/gorilla/mux"
 )
@@ -21,10 +22,12 @@ func main() {
 	})
 
 	repo := memory.NewFinancialAssetRepository()
-	ucs := usecases.NewFinancialAssetsUsecases(repo)
-	handler := controllers.NewFinancialAssetsHandler(ucs)
+	srv := webscraping.NewFinancialAssetScraperService()
+	ucs := usecases.NewFinancialAssetsUsecases(srv, repo)
+	handlers := controllers.NewFinancialAssetsHandler(ucs)
 
-	r.HandleFunc("/api/assets-by-variation", handler.GetAssetsOrderedByVariation)
+	r.HandleFunc("/api/assets-by-variation", handlers.GetAssetsOrderedByVariation)
+
 
 	port := os.Getenv("port")
 	fmt.Printf("Server listening on port %s...\n", port)

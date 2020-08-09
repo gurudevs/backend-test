@@ -7,6 +7,9 @@ import (
 // FinancialAssetsUsecases casos de uso do serviço
 type FinancialAssetsUsecases interface {
 	GetAssetsOrderedByVariation() ([]*model.FinancialAsset, error)
+
+	InitializeAssetQuotations() (error)
+	RefreshAssetQuotations() (error)
 }
 
 // FinancialAsset Estrutura DAO do ativo financeiro
