@@ -2,9 +2,9 @@ FROM golang
 
 ADD . /go/src/github.com/ferkze/backend-test
 
-RUN go get -u github.com/gorilla/mux
+WORKDIR /go/src/github.com/ferkze/backend-test
 
-RUN go get github.com/robfig/cron/v3@v3.0.0
+RUN go get -d -v
 
 RUN go install github.com/ferkze/backend-test
 
