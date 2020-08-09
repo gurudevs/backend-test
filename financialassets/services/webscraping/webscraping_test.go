@@ -1,6 +1,7 @@
 package webscraping
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestGetAssetData(t *testing.T) {
 	})
 
 	t.Run("Deve fazer o parse de dados do ativo", func (tt *testing.T) {
-		file, err := os.Open("docs/ITUB3_page.html")
+		file, err := os.Open(fmt.Sprintf("docs/%s_page.html", stockTicker))
 		if err != nil {
 			tt.Fatalf("Falha na leitura de arquivo: %s\n", err.Error())
 		}

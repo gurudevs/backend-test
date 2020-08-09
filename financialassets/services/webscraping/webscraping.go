@@ -158,14 +158,16 @@ func scrapeAsset(doc *goquery.Document) (*model.FinancialAsset, error) {
 
 func saveDocument(fileName string, r io.ReadCloser) (error) {
 	defer r.Close()
-	_, err := os.Stat(fileName)
+	stat, err := os.Stat(fileName)
 	if !os.IsNotExist(err) {
 		return err
 	}
-
-	err = os.Remove(fileName)
-	if err != nil {
-		return err
+	
+	if stat != nil {
+		err = os.Remove(fileName)
+		if err != nil {
+			return err
+		}
 	}
 
 	file, err := ioutil.ReadAll(r)
