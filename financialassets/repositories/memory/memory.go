@@ -2,6 +2,7 @@ package memory
 
 import (
 	"sync"
+	"time"
 
 	"github.com/ferkze/backend-test/financialassets/model"
 	"github.com/ferkze/backend-test/financialassets/repositories"
@@ -23,6 +24,7 @@ type FinancialAsset struct {
 	Price float32
 	PctVariation float32
 	PriceVariation float32
+	UpdatedAt time.Time
 
 }
 
@@ -32,6 +34,27 @@ func NewFinancialAssetRepository() repositories.FinancialAssetRepository {
 			mu:    &sync.Mutex{},
 			assets: map[string]*FinancialAsset{},
 	}
+}
+
+// Setup inicializa as chaves de tickers dos ativos financeiros
+func (r *FinancialAssetRepository) Setup(assets []*model.FinancialAsset) (error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, asset := range assets {
+		r.assets[asset.GetTicker()] = &FinancialAsset{
+			Company: asset.Company,
+			Close: asset.Close,
+			Open: asset.Open,
+			PctVariation: asset.PctVariation,
+			PriceVariation: asset.PriceVariation,
+			Price: asset.Price,
+			Ticker: asset.Ticker,
+			UpdatedAt: time.Now(),
+		}
+	}
+
+	return nil
 }
 
 // FindAll busca todos os ativos financeiros no repositório
@@ -48,8 +71,8 @@ func (r *FinancialAssetRepository) FindAll() ([]*model.FinancialAsset, error) {
 	return assets, nil
 }
 
-// Add adiciona um ativo financeiro à memória
-func (r *FinancialAssetRepository) Add(asset *model.FinancialAsset) error {
+// Set adiciona um ativo financeiro à memória
+func (r *FinancialAssetRepository) Set(asset *model.FinancialAsset) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -61,6 +84,7 @@ func (r *FinancialAssetRepository) Add(asset *model.FinancialAsset) error {
 		Open: asset.Open,
 		PctVariation: asset.PctVariation,
 		PriceVariation: asset.PriceVariation,
+		UpdatedAt: asset.GetUpdatedAt(),
 	}
 	return nil
 }
