@@ -1,6 +1,9 @@
 package usecases
 
 import (
+	"math"
+	"sort"
+
 	"github.com/ferkze/backend-test/financialassets/model"
 	"github.com/ferkze/backend-test/financialassets/repositories"
 	"github.com/ferkze/backend-test/financialassets/services"
@@ -26,6 +29,9 @@ func (uc *financialAssetsUsecasesImpl) GetAssetsOrderedByVariation() ([]*model.F
 	if err != nil {
 		return nil, err
 	}
+	sort.SliceStable(assets, func(i, j int) bool {
+    return math.Abs(float64(assets[i].PctVariation)) > math.Abs(float64(assets[j].PctVariation))
+	})
 	return assets, nil
 }
 
