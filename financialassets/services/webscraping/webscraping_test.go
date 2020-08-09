@@ -23,7 +23,25 @@ func TestGetIbovespaAssetTickers(t *testing.T) {
 }
 
 func TestGetAssetData(t *testing.T) {
+
+	stockTicker := "ITUB3"
+
 	t.Run("Deve fazer a busca de dados do ativo", func (tt *testing.T) {
+		srv := NewFinancialAssetScraperService()
+		
+		asset, err := srv.GetAssetData(stockTicker)
+		if err != nil {
+			tt.Fatalf("Falha não esperada ao obter os dados do ativo: %s\n", err.Error())
+		}
+
+		if asset.Ticker != stockTicker {
+			tt.Errorf("Erro no ticker do ativo, esperado: %s, obtido: %s\n", stockTicker, asset.Ticker)
+		}
+
+		tt.Logf("Encontrado dados do ativo da companhia %s\n", asset.Company)
+	})
+
+	t.Run("Deve fazer o parse de dados do ativo", func (tt *testing.T) {
 		file, err := os.Open("docs/ITUB3_page.html")
 		if err != nil {
 			tt.Fatalf("Falha na leitura de arquivo: %s\n", err.Error())
@@ -38,11 +56,11 @@ func TestGetAssetData(t *testing.T) {
 			tt.Fatalf("Falha no scrape dos dados no documento: %s\n", err.Error())
 		}
 
-		if asset.Ticker != "ITUB3" {
-			tt.Errorf("Erro no ticker do ativo, esperado: %s, obtido: %s\n", "ITUB3", asset.Ticker)
+		if asset.Ticker != stockTicker {
+			tt.Errorf("Erro no ticker do ativo, esperado: %s, obtido: %s\n", stockTicker, asset.Ticker)
 		}
 
-		tt.Logf("Encontrado dados do ativo da Companhia %s\n", asset.Company)
-
+		tt.Logf("Encontrado dados do ativo da companhia %s\n", asset.Company)
 	})
+	
 }
