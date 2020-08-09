@@ -28,8 +28,7 @@ func main() {
 
 	r.HandleFunc("/api/assets-by-variation", handlers.GetAssetsOrderedByVariation)
 
-
 	bootstrap.SetupCronJobs(tasks)
-	
+	bootstrap.SetupApp(ucs)
 	bootstrap.SetupRestAPI(r)
 }
