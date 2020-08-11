@@ -15,7 +15,7 @@ func NewFinancialAssetsJobs(ucs usecases.FinancialAssetsUsecases) FinancialAsset
 }
 
 func (j *assetsJobsImpl) InitializeAssetQuotations() (error) {
-	return j.assetsUsecases.InitializeAssetQuotations()
+	return j.assetsUsecases.PopulateAssets()
 }
 
 func (j *assetsJobsImpl) RefreshAssetQuotations() (error) {

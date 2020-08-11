@@ -1,7 +1,6 @@
 package bootstrap
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -14,18 +13,22 @@ import (
 
 // SetupApp Inicializa a aplicação com o caso de uso inicial para carregar os dados
 func SetupApp(ucs usecases.FinancialAssetsUsecases) {
-	err := ucs.InitializeAssetQuotations()
+	err := ucs.PopulateAssets()
 	if err != nil {
-		log.Fatalf("A aplicação falhou em sua inicialização: %s\n", err.Error())
+		log.Fatalf("A aplicação falhou em sua população: %s\n", err.Error())
 		return
 	}
-	log.Println("A aplicação inicializou com sucesso!")
+	log.Println("A aplicação populada com sucesso!")
 }
 
 // SetupRestAPI Configura a execução do servidor de API RESTFUL
 func SetupRestAPI(r *mux.Router) {
 	port := os.Getenv("port")
-	fmt.Printf("O servidor está no ar, acesse http://localhost:%s\n", port)
+	if port == "" {
+		port = "8000"
+		log.Printf("Usando a porta %s como default\n", port)
+	}
+	log.Printf("O servidor está no ar, acesse http://localhost:%s/api/assets-by-variation\n", port)
 	http.ListenAndServe(":"+port, r)
 }
 

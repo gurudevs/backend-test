@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 // FinancialAsset Ativo financeiro
 type FinancialAsset struct {
 	Ticker         string  `json:"ticker"`
@@ -11,22 +9,22 @@ type FinancialAsset struct {
 	Price          float32 `json:"price"`
 	PctVariation   float32 `json:"pctVariation"`
 	PriceVariation float32 `json:"priceVariation"`
-	updatedAt      time.Time
 }
 
 // NewFinancialAsset instanciar novo ativo financeiro
-func NewFinancialAsset(ticker string) *FinancialAsset {
+func NewFinancialAsset(ticker, company string, close, open, price, pctVariation, priceVariation float32) *FinancialAsset {
 	return &FinancialAsset{
 		Ticker: ticker,
+		Company: company,
+		Open: open,
+		Close: close,
+		Price: price,
+		PctVariation: pctVariation,
+		PriceVariation: priceVariation,
 	}
 }
 
 // GetTicker retorna o ticker do ativo financeiro
 func (fa *FinancialAsset) GetTicker() string {
 	return fa.Ticker
-}
-
-// GetUpdatedAt retorna o objeto de tempo de sua ultima atualização
-func (fa *FinancialAsset) GetUpdatedAt() time.Time {
-	return fa.updatedAt
 }

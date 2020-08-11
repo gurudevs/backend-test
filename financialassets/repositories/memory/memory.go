@@ -1,8 +1,8 @@
 package memory
 
 import (
+	"log"
 	"sync"
-	"time"
 
 	"github.com/ferkze/backend-test/financialassets/model"
 	"github.com/ferkze/backend-test/financialassets/repositories"
@@ -24,7 +24,6 @@ type FinancialAsset struct {
 	Price float32
 	PctVariation float32
 	PriceVariation float32
-	UpdatedAt time.Time
 
 }
 
@@ -42,7 +41,8 @@ func (r *FinancialAssetRepository) Setup(assets []*model.FinancialAsset) (error)
 	defer r.mu.Unlock()
 
 	for _, asset := range assets {
-		r.assets[asset.GetTicker()] = &FinancialAsset{
+		log.Printf("Adicionado novo ativo à memória com o ticker %s, total de %d ativos\n", asset.Ticker, len(r.assets)+1)
+		r.assets[asset.Ticker] = &FinancialAsset{
 			Company: asset.Company,
 			Close: asset.Close,
 			Open: asset.Open,
@@ -50,7 +50,6 @@ func (r *FinancialAssetRepository) Setup(assets []*model.FinancialAsset) (error)
 			PriceVariation: asset.PriceVariation,
 			Price: asset.Price,
 			Ticker: asset.Ticker,
-			UpdatedAt: time.Now(),
 		}
 	}
 
@@ -65,7 +64,7 @@ func (r *FinancialAssetRepository) FindAll() ([]*model.FinancialAsset, error) {
 	assets := make([]*model.FinancialAsset, len(r.assets))
 	i := 0
 	for _, asset := range r.assets {
-		assets[i] = model.NewFinancialAsset(asset.Ticker)
+		assets[i] = model.NewFinancialAsset(asset.Ticker, asset.Company, asset.Close, asset.Open, asset.Price, asset.PctVariation, asset.PriceVariation)
 		i++
 	}
 	return assets, nil
@@ -84,7 +83,6 @@ func (r *FinancialAssetRepository) Set(asset *model.FinancialAsset) error {
 		Open: asset.Open,
 		PctVariation: asset.PctVariation,
 		PriceVariation: asset.PriceVariation,
-		UpdatedAt: asset.GetUpdatedAt(),
 	}
 	return nil
 }
