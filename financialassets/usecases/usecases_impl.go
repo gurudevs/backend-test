@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"log"
 	"math"
 	"sort"
 
@@ -35,19 +36,37 @@ func (uc *financialAssetsUsecasesImpl) GetAssetsOrderedByVariation() ([]*model.F
 	return assets, nil
 }
 
-func (uc *financialAssetsUsecasesImpl) InitializeAssetQuotations() (error) {
+func (uc *financialAssetsUsecasesImpl) PopulateAssets() (error) {
 	tickers, err := uc.srv.GetIbovespaAssetTickers()
 	if err != nil {
 		return err
 	}
+	tickers = tickers[0:10]
+	assetCh := make(chan *model.FinancialAsset, len(tickers))
+	errCh := make(chan error)
 	for _, ticker := range tickers {
-		asset, err := uc.srv.GetAssetData(ticker)
-		if err != nil {
-			return err
-		}
-		uc.repo.Set(asset)
+		go uc.srv.GetAssetDataCh(ticker, assetCh, errCh)
 	}
-	return nil
+	assets := make([]*model.FinancialAsset, len(tickers))
+	i := 0
+	for asset := range assetCh {
+		select {
+		case err := <- errCh:
+			log.Println("Erro recebido no canal, abortando busca de ativos...")
+			close(assetCh)
+			return err
+		default:
+			log.Printf("O ativo %d de %d do Ibovespa está sendo guardado\n", i, len(tickers))
+			assets[i] = asset
+			if i == len(tickers)-1 {
+				close(assetCh)
+				close(errCh)
+				break
+			}
+			i++
+		}
+	}
+	return uc.repo.Setup(assets)
 }
 
 // GetAssetsOrderedByVariation Seleciona todos os ativos ordenados por variação descendente

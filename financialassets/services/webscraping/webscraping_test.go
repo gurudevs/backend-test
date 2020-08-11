@@ -1,11 +1,7 @@
 package webscraping
 
 import (
-	"fmt"
-	"os"
 	"testing"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 func TestGetIbovespaAssetTickers(t *testing.T) {
@@ -33,28 +29,6 @@ func TestGetAssetData(t *testing.T) {
 		asset, err := srv.GetAssetData(stockTicker)
 		if err != nil {
 			tt.Fatalf("Falha não esperada ao obter os dados do ativo: %s\n", err.Error())
-		}
-
-		if asset.Ticker != stockTicker {
-			tt.Errorf("Erro no ticker do ativo, esperado: %s, obtido: %s\n", stockTicker, asset.Ticker)
-		}
-
-		tt.Logf("Encontrado dados do ativo da companhia %s\n", asset.Company)
-	})
-
-	t.Run("Deve fazer o parse de dados do ativo", func (tt *testing.T) {
-		file, err := os.Open(fmt.Sprintf("docs/%s_page.html", stockTicker))
-		if err != nil {
-			tt.Fatalf("Falha na leitura de arquivo: %s\n", err.Error())
-		}
-		doc, err := goquery.NewDocumentFromReader(file)
-		if err != nil {
-			tt.Fatalf("Falha no parse do documento HTML: %s\n", err.Error())
-		}
-
-		asset, err := scrapeAsset(doc)
-		if err != nil {
-			tt.Fatalf("Falha no scrape dos dados no documento: %s\n", err.Error())
 		}
 
 		if asset.Ticker != stockTicker {

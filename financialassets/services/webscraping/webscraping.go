@@ -2,11 +2,8 @@ package webscraping
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -45,7 +42,7 @@ func (s *WebScrapingService) GetIbovespaAssetTickers() ([]string, error) {
   }
   defer res.Body.Close()
   if res.StatusCode != 200 {
-    log.Printf("status code error: %d %s", res.StatusCode, res.Status)
+    log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
 		return tickers, fmt.Errorf("Unexpected page response status %d", res.StatusCode)
   }
 
@@ -67,8 +64,6 @@ func (s *WebScrapingService) GetIbovespaAssetTickers() ([]string, error) {
 
 // GetAssetData retorna o resultado do scraping dado o ticker do ativo
 func (s *WebScrapingService) GetAssetData(ticker string) (*model.FinancialAsset, error) {
-	
-	documentPath := fmt.Sprintf("docs/%s_page.html", ticker)
 	url := "http://br.advfn.com/common/search/exchanges/quote"
 
 	payload := strings.NewReader(fmt.Sprintf("symbol=BOV:%s&symbol_ok=OK", ticker))
@@ -87,28 +82,54 @@ func (s *WebScrapingService) GetAssetData(ticker string) (*model.FinancialAsset,
 		log.Printf("Erro ao enviar requisição: %s\n", err.Error())
 		return nil, err
 	}
-	
-	err = saveDocument(documentPath, res.Body)
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		log.Printf("Falha na gravação de arquivo: %s\n", err.Error())
+		log.Fatalf("Erro ao realizar parse do documento: %s\n", err.Error())
 	}
 
-	file, err := os.Open(documentPath)
-	if err != nil {
-		log.Printf("Falha na leitura de arquivo: %s\n", err.Error())
+	asset, err := scrapeAsset(doc)
+  if err != nil {
+		log.Fatalf("Erro ao scraping do documento: %s\n", err.Error())
+		return nil, err
 	}
-	doc, err := goquery.NewDocumentFromReader(file)
+
+	return asset, nil
+}
+
+// GetAssetDataCh canaliza o resultado do scraping dado o ticker do ativo
+func (s *WebScrapingService) GetAssetDataCh(ticker string, dataCh chan *model.FinancialAsset, errCh chan error) {
+	log.Printf("Começando a busca de dados do ticker %s\n", ticker)
+	url := "http://br.advfn.com/common/search/exchanges/quote"
+
+	payload := strings.NewReader(fmt.Sprintf("symbol=BOV:%s&symbol_ok=OK", ticker))
+
+	req, err := http.NewRequest("POST", url, payload)
+  if err != nil {
+		log.Printf("Erro ao criar requisição POST: %s\n", err.Error())
+		errCh <- err
+	}
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+
+	res, err := http.DefaultClient.Do(req)
+  if err != nil {
+		log.Printf("Erro ao enviar requisição: %s\n", err.Error())
+		errCh <- err
+	}
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
 		log.Printf("Erro ao realizar parse do documento: %s\n", err.Error())
+		errCh <- err
 	}
 
 	asset, err := scrapeAsset(doc)
   if err != nil {
 		log.Printf("Erro ao scraping do documento: %s\n", err.Error())
-		return nil, err
+		errCh <- err
 	}
-
-	return asset, nil
+	log.Printf("Finalizado a busca de dados do ativo: %s\n", asset.Ticker)
+	dataCh <- asset
 }
 
 func scrapeAsset(doc *goquery.Document) (*model.FinancialAsset, error) {
@@ -118,66 +139,55 @@ func scrapeAsset(doc *goquery.Document) (*model.FinancialAsset, error) {
 		asset.Ticker = strings.TrimSpace(s.Text())
 	})
 
+	doc.Find(companyNameSelector).Each(func(i int, s *goquery.Selection) {
+		asset.Company = strings.TrimSpace(s.Text())
+	})
+
 	doc.Find(currentQuotationSelector).Each(func(i int, s *goquery.Selection) {
 		text := strings.Replace(strings.TrimSpace(s.Text()), ",", ".", 1)
-		currentPrice, _ := strconv.ParseFloat(text, 32)
+		currentPrice, err := strconv.ParseFloat(text, 32)
+		if err != nil {
+			log.Printf("Erro ao buscar o dado sobre o preço atual: %s\n", err.Error())
+		}
 		asset.Price = float32(currentPrice)
 	})
 
 	doc.Find(openQuotationSelector).Each(func(i int, s *goquery.Selection) {
 		text := strings.Replace(strings.TrimSpace(s.Text()), ",", ".", 1)
-		openPrice, _ := strconv.ParseFloat(text, 32)
+		openPrice, err := strconv.ParseFloat(text, 32)
+		if err != nil {
+			log.Printf("Erro ao buscar o dado sobre o preço de abertura: %s\n", err.Error())
+		}
 		asset.Open = float32(openPrice)
 	})
 
 	doc.Find(closeQuotationSelector).Each(func(i int, s *goquery.Selection) {
 		text := strings.Replace(strings.TrimSpace(s.Text()), ",", ".", 1)
-		closePrice, _ := strconv.ParseFloat(text, 32)
+		closePrice, err := strconv.ParseFloat(text, 32)
+		if err != nil {
+			log.Printf("Erro ao buscar o dado sobre o preço de fechamento: %s\n", err.Error())
+		}
 		asset.Close = float32(closePrice)
 	})
 
 	doc.Find(pctVariationSelector).Each(func(i int, s *goquery.Selection) {
 		pctText := strings.Replace(strings.TrimSpace(s.Text()), ",", ".", 1)
 		text := strings.TrimSuffix(pctText, "%")
-		pctVariation, _ := strconv.ParseFloat(text, 32)
+		pctVariation, err := strconv.ParseFloat(text, 32)
+		if err != nil {
+			log.Printf("Erro ao buscar o dado sobre a variação percentual: %s\n", err.Error())
+		}
 		asset.PctVariation = float32(pctVariation)
 	})
 
 	doc.Find(priceVariationSelector).Each(func(i int, s *goquery.Selection) {
 		text := strings.Replace(strings.TrimSpace(s.Text()), ",", ".", 1)
-		priceVariation, _ := strconv.ParseFloat(text, 32)
+		priceVariation, err := strconv.ParseFloat(text, 32)
+		if err != nil {
+			log.Printf("Erro ao buscar o dado sobre a variação de preço: %s\n", err.Error())
+		}
 		asset.PriceVariation = float32(priceVariation)
 	})
 
-	doc.Find(companyNameSelector).Each(func(i int, s *goquery.Selection) {
-		asset.Company = strings.TrimSpace(s.Text())
-	})
-
 	return asset, nil
-}
-
-func saveDocument(fileName string, r io.ReadCloser) (error) {
-	defer r.Close()
-	stat, err := os.Stat(fileName)
-	if !os.IsNotExist(err) {
-		return err
-	}
-	
-	if stat != nil {
-		err = os.Remove(fileName)
-		if err != nil {
-			return err
-		}
-	}
-
-	file, err := ioutil.ReadAll(r)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(fileName, file, 0644)
-	if err != nil {
-		return err
-	}
-	
-	return nil
 }

@@ -8,7 +8,7 @@ import (
 type FinancialAssetsUsecases interface {
 	GetAssetsOrderedByVariation() ([]*model.FinancialAsset, error)
 
-	InitializeAssetQuotations() (error)
+	PopulateAssets() (error)
 	RefreshAssetQuotations() (error)
 }
 
