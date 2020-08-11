@@ -15,10 +15,10 @@ import (
 func SetupApp(ucs usecases.FinancialAssetsUsecases) {
 	err := ucs.PopulateAssets()
 	if err != nil {
-		log.Fatalf("A aplicação falhou em sua população: %s\n", err.Error())
+		log.Fatalf("Aplicação falhou em sua população: %s\n", err.Error())
 		return
 	}
-	log.Println("A aplicação populada com sucesso!")
+	log.Println("Aplicação populada com sucesso!")
 }
 
 // SetupRestAPI Configura a execução do servidor de API RESTFUL

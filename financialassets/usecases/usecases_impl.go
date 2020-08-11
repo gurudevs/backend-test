@@ -41,7 +41,6 @@ func (uc *financialAssetsUsecasesImpl) PopulateAssets() (error) {
 	if err != nil {
 		return err
 	}
-	tickers = tickers[0:10]
 	assetCh := make(chan *model.FinancialAsset, len(tickers))
 	errCh := make(chan error)
 	for _, ticker := range tickers {
@@ -56,11 +55,11 @@ func (uc *financialAssetsUsecasesImpl) PopulateAssets() (error) {
 			close(assetCh)
 			return err
 		default:
-			log.Printf("O ativo %d de %d do Ibovespa está sendo guardado\n", i, len(tickers))
 			assets[i] = asset
 			if i == len(tickers)-1 {
 				close(assetCh)
 				close(errCh)
+				log.Printf("Scraping de %d ativos finalizado!\n", len(tickers))
 				break
 			}
 			i++
